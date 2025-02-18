@@ -1,0 +1,7 @@
+bash-complete-alias
+figlet-fonts-extra
+h-m-m-git
+pistol-git
+python2
+vimv
+xdg-ninja-git
