@@ -36,7 +36,7 @@ doconf() {
     echo "Making some directories"
     (
         cd "$HOME" || exit
-        mkdir codino repos Documents/IRL
+        mkdir codino Games repos Documents/IRL
     )
 }
 
