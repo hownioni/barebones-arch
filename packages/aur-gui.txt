@@ -18,7 +18,7 @@ proton-ge-custom-bin
 protontricks
 python-pulsectl
 python-pulsectl-asyncio
-python-pywalfox-librewolf
+python-pywalfox
 pywal-discord-git
 pywal-spicetify
 qtile-extras

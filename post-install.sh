@@ -25,6 +25,7 @@ dogui() {
     mapfile -t aur_gui <./packages/aur-gui.txt
 
     sudo pacman -S --noconfirm "${gui[@]}"
+    sudo pacman -Rns --noconfirm xterm
     yay -S --noconfirm "${aur_gui[@]}"
     sleep 5
     sudo localectl set-x11-keymap latam pc105 deadtilde

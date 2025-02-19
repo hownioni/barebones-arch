@@ -26,7 +26,6 @@ foomatic-db-engine
 foomatic-db-gutenprint-ppds
 fuse-overlayfs
 gamemode
-geogebra
 ghostscript
 gimp
 gnu-free-fonts
