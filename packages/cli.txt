@@ -8,6 +8,7 @@ cowsay
 devtools
 dkms
 dmidecode
+docx2txt
 dosfstools
 efibootmgr
 exfatprogs
