@@ -25,7 +25,6 @@ qtile-extras
 rofi-nerdy
 spicetify-cli
 syncthingtray
-themix-theme-oomox-git
 ttf-mplus-git
 vesktop-bin
 win2xcur

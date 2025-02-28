@@ -1,6 +1,5 @@
 alsa-utils
 amd-ucode
-beets
 bind
 bitwarden
 blender
@@ -10,10 +9,8 @@ bluez-utils
 chromaprint
 copyq
 cups-pdf
-ddrescue
 dunst
 dwarffortress
-enca
 fcitx5
 fcitx5-configtool
 fcitx5-gtk
@@ -67,10 +64,7 @@ nicotine+
 noto-fonts
 noto-fonts-cjk
 noto-fonts-emoji
-nss-mdns
 nsxiv
-numlockx
-obs-studio
 otf-ipafont
 otf-overpass
 pamixer
@@ -99,12 +93,9 @@ sshfs
 steam
 syncthing
 sysstat
-telegram-desktop
-testdisk
 tex-gyre-fonts
 thunderbird
 tk
-torbrowser-launcher
 ttf-caladea
 ttf-carlito
 ttf-dejavu
