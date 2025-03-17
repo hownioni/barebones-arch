@@ -3,10 +3,14 @@
 print_recs() {
     echo "1. Don't forget to install yay! (https://github.com/Jguer/yay.git)"
     echo "2. Configure ly on /etc/ly/config.ini (clock format: %F %a - %r)"
-    echo "3. Don't forget to enable ly, cups and bluetooth!"
+    echo "3. Don't forget to enable ly, cups, avahi-daemon and bluetooth!"
+    echo "3a. Edit the 'hosts:' line on /etc/nsswitch.conf to this:"
+    printf "\t%s\n" "hosts: mymachines mdns_minimal [NOTFOUND=return] resolve [!UNAVAIL=return] files myhostname dns"
     echo "4a. Create ssh keys and add them to your github account (don't forget to activate ssh-agent and config ~/.ssh)"
     echo "4b. Clone your dotfiles with this command (Also make the alias <3): "
+    # shellcheck disable=SC2016
     printf "\t%s\n" 'git clone --bare "$dotfiles_repo" "$HOME"/.dotfiles &>/dev/null'
+    # shellcheck disable=SC2016
     printf "\talias dotfiles='%s'\n" '/usr/bin/git --git-dir="$HOME/.dotfiles/" --work-tree="$HOME"'
     echo "Configure firefox (PENDING: Add which extensions I use)"
 }

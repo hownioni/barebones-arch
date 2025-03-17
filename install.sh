@@ -48,6 +48,7 @@ EOF
 
     # Disabling debug packages for yay
     echo "Disabling makepkg debug packages and activating parallel compilation"
+    # shellcheck disable=SC2016
     sed -Ei 's/ (debug lto)/ !\1/;s/^#(MAKEFLAGS=).*/\1\"--jobs=\$(nproc)\"/' /mnt/etc/makepkg.conf # ignore
 
     # Better history
