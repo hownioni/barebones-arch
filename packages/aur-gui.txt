@@ -24,7 +24,6 @@ pywal-spicetify
 qtile-extras
 rofi-nerdy
 spicetify-cli
-syncthingtray
 ttf-mplus-git
 vesktop-bin
 win2xcur
