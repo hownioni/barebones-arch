@@ -31,7 +31,7 @@ print_recs() {
 doinstall() {
     echo "Preparing pacstrap"
 
-    mapfile -t pkgs <./packages/cli.txt
+    mapfile -t pkgs <./packages/cli
     microcode_detector
     pkgs+=("$microcode")
     pacstrap -K /mnt "${pkgs[@]}"

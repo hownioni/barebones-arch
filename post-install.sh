@@ -1,24 +1,27 @@
 #!/usr/bin/env bash
 
+source ./format.sh
+
 print_recs() {
-    echo "1. Don't forget to install yay! (https://github.com/Jguer/yay.git)"
-    echo "2. Configure ly on /etc/ly/config.ini (clock format: %F %a - %r)"
-    echo "3. Don't forget to enable ly, cups, avahi-daemon and bluetooth!"
-    echo "3a. Edit the 'hosts:' line on /etc/nsswitch.conf to this:"
-    printf "\t%s\n" "hosts: mymachines mdns_minimal [NOTFOUND=return] resolve [!UNAVAIL=return] files myhostname dns"
-    echo "4a. Create ssh keys and add them to your github account (don't forget to activate ssh-agent and config ~/.ssh)"
-    echo "4b. Clone your dotfiles with this command (Also make the alias <3): "
+    txt1 "1. Don't forget to install yay! (https://github.com/Jguer/yay.git)"
+    txt1 "2. Configure ly on /etc/ly/config.ini (clock format: %F %a - %r)"
+    txt1 "3. Don't forget to enable reflector.timer, ly, cups, avahi-daemon and bluetooth!"
+    txt2 "3a. Edit the 'hosts:' line on /etc/nsswitch.conf to this:"
+    txt3 "hosts: mymachines mdns_minimal [NOTFOUND=return] resolve [!UNAVAIL=return] files myhostname dns"
+    txt1 "5. Create ssh keys and add them to your github account (don't forget to activate ssh-agent and config ~/.ssh)"
+    txt1 "6. Clone your dotfiles with this command (And make the alias): "
     # shellcheck disable=SC2016
-    printf "\t%s\n" 'git clone --bare "$dotfiles_repo" "$HOME"/.dotfiles &>/dev/null'
+    txt2 'git clone --bare "$dotfiles_repo" "$HOME"/.dotfiles &>/dev/null'
     # shellcheck disable=SC2016
-    printf "\talias dotfiles='%s'\n" '/usr/bin/git --git-dir="$HOME/.dotfiles/" --work-tree="$HOME"'
-    echo "Configure firefox (PENDING: Add which extensions I use)"
+    txt2 'alias dotfiles='\''/usr/bin/git --git-dir="$HOME/.dotfiles/" --work-tree="$HOME"'\'''
+    txt1 "7. Run 'tldr --update'"
+    txt1 "8. Configure firefox (PENDING: Add which extensions I use)"
 }
 
 docli() {
     echo "Installing aur cli"
 
-    mapfile -t cli <./packages/aur-cli.txt
+    mapfile -t cli <./packages/aur-cli
 
     yay -S --noconfirm "${cli[@]}"
 }
@@ -26,8 +29,8 @@ docli() {
 dogui() {
     echo "Installing gui"
 
-    mapfile -t gui <./packages/gui.txt
-    mapfile -t aur_gui <./packages/aur-gui.txt
+    mapfile -t gui <./packages/gui
+    mapfile -t aur_gui <./packages/aur-gui
 
     sudo pacman -S --noconfirm "${gui[@]}"
     sudo pacman -Rns --noconfirm xterm
