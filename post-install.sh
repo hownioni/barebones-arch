@@ -43,7 +43,7 @@ docli() {
 		mapfile -t -O "${#pkgs[@]}" pkgs <"$cli_pkgs_dir"/10-laptop
 	fi
 
-	paru -S --noconfirm "${pkgs[@]}"
+	paru -S --needed --noconfirm "${pkgs[@]}"
 }
 
 dogui() {
