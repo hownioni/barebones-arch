@@ -1,17 +1,96 @@
 #!/usr/bin/env bash
 
+# With code borrowed (stolen) from https://github.com/classy-giraffe/easy-arch/
+# It'll be commented with # classy-giraffe to credit the snippets I used
+
 source ./format.sh
 
+# Setting up a password for the user account (function).
+# classy-giraffe
+userpass_selector() {
+	input_print "Please enter name for a user account (enter empty to not create one): "
+	read -r username
+	if [[ -z "$username" ]]; then
+		return 0
+	fi
+	input_print "Please enter a password for $username (you're not going to see the password): "
+	read -r -s userpass
+	if [[ -z "$userpass" ]]; then
+		echo
+		error_print "You need to enter a password for $username, please try again."
+		return 1
+	fi
+	echo
+	input_print "Please enter the password again (you're not going to see it): "
+	read -r -s userpass2
+	echo
+	if [[ "$userpass" != "$userpass2" ]]; then
+		echo
+		error_print "Passwords don't match, please try again."
+		return 1
+	fi
+	return 0
+}
+
+# Setting up a password for the root account (function).
+# classy-giraffe
+rootpass_selector() {
+	input_print "Please enter a password for the root user (you're not going to see it): "
+	read -r -s rootpass
+	if [[ -z "$rootpass" ]]; then
+		echo
+		error_print "You need to enter a password for the root user, please try again."
+		return 1
+	fi
+	echo
+	input_print "Please enter the password again (you're not going to see it): "
+	read -r -s rootpass2
+	echo
+	if [[ "$rootpass" != "$rootpass2" ]]; then
+		error_print "Passwords don't match, please try again."
+		return 1
+	fi
+	return 0
+}
+
 # Microcode detector (function).
+# classy-giraffe
 microcode_detector() {
 	CPU=$(grep vendor_id /proc/cpuinfo)
 	if [[ "$CPU" == *"AuthenticAMD"* ]]; then
-		echo "An AMD CPU has been detected, the AMD microcode will be installed."
+		info_print "An AMD CPU has been detected, the AMD microcode will be installed."
 		microcode="amd-ucode"
 	else
-		echo "An Intel CPU has been detected, the Intel microcode will be installed."
+		info_print "An Intel CPU has been detected, the Intel microcode will be installed."
 		microcode="intel-ucode"
 	fi
+}
+
+# User enters a hostname (function).
+# classy-giraffe
+hostname_selector() {
+	input_print "Please enter the hostname: "
+	read -r hostname
+	if [[ -z "$hostname" ]]; then
+		error_print "You need to enter a hostname in order to continue."
+		return 1
+	fi
+	return 0
+}
+
+locale_selector() {
+	input_print "Please write the locales you use (example format: en_US.UTF-8), the first one will be used for locale.conf. Press Ctrl+D when finished: "
+	mapfile -t locales
+	for locale in "${locales[@]}"; do
+		if ! grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$locale")" /etc/locale.gen; then
+			error_print "Locale ${locale} doesn't exist."
+			return 1
+		else
+			sed -i "/^#$locale/s/^#//" /mnt/etc/locale.gen
+		fi
+	done
+	echo "LANG=$locale" >/mnt/etc/locale.conf
+	return 0
 }
 
 print_recs() {
@@ -22,6 +101,7 @@ print_recs() {
 	sswap=$(printf "%1.f" "$sswap")
 	hswap=$((sswap + ram_total))
 
+	txt1 "Do install to /mnt first!"
 	txt1 "Recommended swap size: $sswap ($hswap if hibernating)"
 	txt1 "Don't forget to add your user to the wheel group on the sudoers file"
 	txt1 "On the sudoers file add the following lines:"
@@ -32,7 +112,7 @@ print_recs() {
 }
 
 doinstall() {
-	echo "Preparing pacstrap"
+	info_print "Preparing pacstrap"
 	cli_pkgs_dir="./packages/cli/"
 
 	mapfile -t pkgs <"$cli_pkgs_dir"/00-cli
@@ -43,7 +123,7 @@ doinstall() {
 
 doconf() {
 	# Pacman eye-candy features.
-	echo "Enabling colors, multilib, animations, and parallel downloads for pacman."
+	info_print "Enabling colors, multilib, animations, and parallel downloads for pacman."
 	sed -Ei 's/^#(VerbosePkgLists)$/\1/;s/^#(Color)$/\1\nILoveCandy/;s/^#(ParallelDownloads).*/\1 = 10/' /mnt/etc/pacman.conf
 	sed -i "/\[multilib\]/,/Include/"'s/^#//' /mnt/etc/pacman.conf
 	arch-chroot /mnt /bin/bash -e <<-EOF
@@ -51,12 +131,12 @@ doconf() {
 	EOF
 
 	# Disabling debug packages for yay
-	echo "Disabling makepkg debug packages and activating parallel compilation"
+	info_print "Disabling makepkg debug packages and activating parallel compilation"
 	# shellcheck disable=SC2016
 	sed -Ei 's/ (debug lto)/ !\1/;s/^#(MAKEFLAGS=).*/\1\"--jobs=\$(nproc)\"/' /mnt/etc/makepkg.conf # ignore
 
 	# Better history
-	echo "Enabling better history search"
+	info_print "Enabling better history search"
 	cat >/mnt/etc/profile.d/bash_history.sh <<-EOF
 		# Save 10,000 lines of history in memory
 		export HISTSIZE=10000
@@ -76,22 +156,66 @@ doconf() {
 		export PROMPT_COMMAND="history -a; history -c; history -r; \$PROMPT_COMMAND"
 	EOF
 
-	echo "Enabling NetworkManager"
+	info_print "Enabling NetworkManager"
 	systemctl enable NetworkManager --root=/mnt
+
+	until locale_selector; do :; done
+
+	until hostname_selector; do :; done
+	echo "$hostname" >/mnt/etc/hostname
+
+	info_print "Generating fstab."
+	genfstab -U /mnt >>/mnt/etc/fstab
+
+	until userpass_selector; do :; done
+	until rootpass_selector; do :; done
+
+	info_print "Configuring timezone and whatnot"
+	arch-chroot /mnt /bin/bash -e <<-EOF
+		ln -sf /usr/share/zoneinfo/$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime
+		hwclock --systohc
+		locale-gen
+
+		mkinitcpio -P
+
+		grub-install --target=x86_64-efi --efi-directory=/boot/ --bootloader-id=GRUB
+		grub-mkconfig -o /boot/grub/grub.cfg
+	EOF
+
+	info_print "Setting root password."
+	echo "root:$rootpass" | arch-chroot /mnt chpasswd
+
+	cat >/mnt/etc/sudoers.d/tweaks <<-EOF
+		Defaults passwd_timeout=0
+		Defaults pwfeedback
+	EOF
+
+	if [[ -n "$username" ]]; then
+		echo "%wheel ALL=(ALL:ALL) ALL" >/mnt/etc/sudoers.d/wheel
+		info_print "Adding the user $username to the system with root privilege."
+		arch-chroot /mnt useradd -m -G wheel,games -s /bin/bash "$username"
+		info_print "Setting user password for $username."
+		echo "$username:$userpass" | arch-chroot /mnt chpasswd
+	fi
+
+	info_print "Enabling Reflector"
+	systemctl enable "reflector.timer" --root=/mnt
+
+	info_print "Done!"
 }
 
 printf "%s\n" "Welcome!"
 PS3="Choose an option: "
-menu_opts=("Recommendations" "Install to /mnt" "Configure")
+menu_opts=("Install to /mnt" "Recommendations" "Configure")
 
 select opt in "${menu_opts[@]}"; do
 	case $opt in
-		"Recommendations")
-			print_recs
-			break
-			;;
 		"Install to /mnt")
 			doinstall
+			break
+			;;
+		"Recommendations")
+			print_recs
 			break
 			;;
 		"Configure")
@@ -99,7 +223,7 @@ select opt in "${menu_opts[@]}"; do
 			break
 			;;
 		*)
-			echo "Invalid option"
+			error_print "Invalid option"
 			;;
 	esac
 done

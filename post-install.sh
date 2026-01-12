@@ -4,36 +4,38 @@ source ./format.sh
 
 yes_or_no() {
 	while true; do
-		read -r -p "$* [y/n]: " yn
+		input_print "$* [y/n]: "
+		read -r yn
 		case $yn in
 			[Yy]*) return 0 ;; # Return 0 for 'yes'
 			[Nn]*)
-				echo "Aborted"
 				return 1
 				;; # Return 1 for 'no'
-			*) echo "Please answer yes or no." ;;
+			*) error_print "Please answer yes or no." ;;
 		esac
 	done
 }
 
 print_recs() {
 	txt1 "Don't forget to install an AUR client"
-	txt1 "Configure ly on /etc/ly/config.ini (clock format: %F %a - %r)"
-	txt1 "Don't forget to enable reflector.timer, ly, cups, avahi-daemon, bluetooth and obex (user)!"
-	txt2 "Edit the 'hosts:' line on /etc/nsswitch.conf to this:"
-	txt3 "hosts: mymachines mdns_minimal [NOTFOUND=return] resolve [!UNAVAIL=return] files myhostname dns"
+	txt2 'git clone https://aur.archlinux.org/paru.git'
+	txt1 "Finish CLI and GUI install"
+	txt1 "Configure ly on /etc/ly/config.ini (clock format: %F %a - %r) and don't forget to enable it."
 	txt1 "Create ssh keys and add them to your github account (don't forget to activate ssh-agent and config ~/.ssh)"
+	txt2 'ssh-keygen'
 	txt1 "Clone your dotfiles with this command (And make the alias): "
 	# shellcheck disable=SC2016
 	txt2 'git clone --bare "$dotfiles_repo" "$HOME"/.dotfiles &>/dev/null'
 	# shellcheck disable=SC2016
 	txt2 'alias dotfiles='\''/usr/bin/git --git-dir="$HOME/.dotfiles/" --work-tree="$HOME"'\'''
+	txt2 'dotfiles checkout -f'
 	txt1 "Run 'tldr --update'"
-	txt1 "Configure firefox (PENDING: Add which extensions I use)"
+	# TODO: Add which extensions I use"
+	txt1 "Configure firefox"
 }
 
 docli() {
-	echo "Installing CLI stuff from AUR"
+	info_print "Installing CLI stuff from AUR"
 	cli_pkgs_dir="./packages/cli/"
 	dev_type=$(hostnamectl chassis)
 
@@ -47,7 +49,7 @@ docli() {
 }
 
 dogui() {
-	echo "Installing GUI"
+	info_print "Installing GUI"
 	gui_pkgs_dir="./packages/gui"
 	flatpak_dir="./packages/flatpak"
 
@@ -55,6 +57,7 @@ dogui() {
 	menu_opts=("X11" "Wayland")
 
 	mapfile -t pkgs <"$gui_pkgs_dir"/00-gui
+	mapfile -t deps <"$gui_pkgs_dir"/02-depends
 
 	if yes_or_no "Do you want to use the AUR?"; then
 		mapfile -t -O "${#pkgs[@]}" pkgs <"$gui_pkgs_dir"/01-aur
@@ -92,7 +95,8 @@ dogui() {
 		mapfile -t -O "${#pkgs[@]}" pkgs <"$gui_pkgs_dir"/90-games
 	fi
 
-	paru -S --sudoloop "${pkgs[@]}"
+	paru -S --sudoloop --noconfirm --noconfirm "${deps[@]}"
+	paru -S --sudoloop --noconfirm "${pkgs[@]}"
 
 	if yes_or_no "Do you want flatpak apps?"; then
 		while read -r inst ref; do
@@ -114,36 +118,45 @@ dogui() {
 }
 
 doconf() {
-	echo "Making some directories"
+	info_print "Making some directories"
 	(
 		cd "$HOME" || exit
-		mkdir codino Games repos Documents/IRL
+		mkdir --parents codino Games repos Documents/IRL
 	)
 	if [[ -f /etc/paru.conf ]]; then
-		sudo sed -Ei 's/^#(AurOnly)$/\1/;s/^#(SudoLoop)$/\1/;s/^#(NewsOnUpgrade)$/\1/' /etc/paru.conf
+		sudo sed -Ei 's/^#(SudoLoop)$/\1/;s/^#(NewsOnUpgrade)$/\1/' /etc/paru.conf
 	fi
 
 	if [[ -f /etc/nsswitch.conf ]]; then
 		sudo sed -Ei 's/^(hosts: mymachines).*(resolve.*)/\1 mdns_minimal [NOTFOUND = return] \2/' /etc/nsswitch.conf
 	fi
+
+	services=(cups.service avahi-daemon.service bluetooth.service)
+	user_services=(obex.service ssh-agent.service)
+	for service in "${services[@]}"; do
+		sudo systemctl enable "$service"
+	done
+	for user_service in "${user_services[@]}"; do
+		systemctl --user enable "$user_service"
+	done
 }
 
 printf "%s\n" "Welcome!"
 PS3="Choose an option: "
-menu_opts=("Recommendations" "Finish CLI install with AUR" "Install GUI" "Configure some stuff")
+menu_opts=("Finish CLI install with AUR" "Install GUI" "Recommendations" "Configure some stuff")
 
 select opt in "${menu_opts[@]}"; do
 	case $opt in
-		"Recommendations")
-			print_recs
-			break
-			;;
 		"Finish CLI install with AUR")
 			docli
 			break
 			;;
 		"Install GUI")
 			dogui
+			break
+			;;
+		"Recommendations")
+			print_recs
 			break
 			;;
 		"Configure some stuff")
