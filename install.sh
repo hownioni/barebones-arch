@@ -78,6 +78,8 @@ hostname_selector() {
 	return 0
 }
 
+# User chooses locale (function)
+# classy-giraffe
 locale_selector() {
 	input_print "Please write the locales you use (example format: en_US.UTF-8), the first one will be used for locale.conf. Press Ctrl+D when finished: "
 	mapfile -t locales
@@ -89,8 +91,36 @@ locale_selector() {
 			sed -i "/^#$locale/s/^#//" /mnt/etc/locale.gen
 		fi
 	done
-	echo "LANG=$locale" >/mnt/etc/locale.conf
+	echo "LANG=${locales[0]}" >/mnt/etc/locale.conf
 	return 0
+}
+
+# User chooses the console keyboard layout (function).
+# classy-giraffe
+keyboard_selector() {
+	input_print "Please insert the keyboard layout to use in console (enter empty to use US, or \"/\" to look up for keyboard layouts): "
+	read -r kblayout
+	case "$kblayout" in
+		'')
+			kblayout="us"
+			info_print "The standard US keyboard layout will be used."
+			return 0
+			;;
+		'/')
+			localectl list-keymaps
+			clear
+			return 1
+			;;
+		*)
+			if ! localectl list-keymaps | grep -Fxq "$kblayout"; then
+				error_print "The specified keymap doesn't exist."
+				return 1
+			fi
+			info_print "Changing console layout to $kblayout."
+			loadkeys "$kblayout"
+			return 0
+			;;
+	esac
 }
 
 print_recs() {
@@ -122,44 +152,12 @@ doinstall() {
 }
 
 doconf() {
-	# Pacman eye-candy features.
-	info_print "Enabling colors, multilib, animations, and parallel downloads for pacman."
-	sed -Ei 's/^#(VerbosePkgLists)$/\1/;s/^#(Color)$/\1\nILoveCandy/;s/^#(ParallelDownloads).*/\1 = 10/' /mnt/etc/pacman.conf
-	sed -i "/\[multilib\]/,/Include/"'s/^#//' /mnt/etc/pacman.conf
-	arch-chroot /mnt /bin/bash -e <<-EOF
-		pacman -Sy &>/dev/null
-	EOF
-
-	# Disabling debug packages for yay
-	info_print "Disabling makepkg debug packages and activating parallel compilation"
-	# shellcheck disable=SC2016
-	sed -Ei 's/ (debug lto)/ !\1/;s/^#(MAKEFLAGS=).*/\1\"--jobs=\$(nproc)\"/' /mnt/etc/makepkg.conf # ignore
-
-	# Better history
-	info_print "Enabling better history search"
-	cat >/mnt/etc/profile.d/bash_history.sh <<-EOF
-		# Save 10,000 lines of history in memory
-		export HISTSIZE=10000
-		# Save 200,000 lines of history to disk (will have to grep ~/.bash_history for full listing)
-		export HISTFILESIZE=200000
-		# Append to history instead of overwrite
-		shopt -s histappend
-		# Ignore redundant or space commands
-		export HISTCONTROL=ignoreboth
-		# Ignore more
-		export HISTIGNORE='ls:ll:la:pwd:clear:history'
-		# Set time format
-		export HISTTIMEFORMAT='%F %T '
-		# Multiple commands on one line show up as a single line
-		shopt -s cmdhist
-		# Append new history lines, clear the history list, re-read the history list, print prompt.
-		export PROMPT_COMMAND="history -a; history -c; history -r; \$PROMPT_COMMAND"
-	EOF
-
 	info_print "Enabling NetworkManager"
 	systemctl enable NetworkManager --root=/mnt
 
 	until locale_selector; do :; done
+	until keyboard_selector; do :; done
+	echo "KEYMAP=$kblayout" >/mnt/etc/vconsole.conf
 
 	until hostname_selector; do :; done
 	echo "$hostname" >/mnt/etc/hostname
@@ -197,6 +195,40 @@ doconf() {
 		info_print "Setting user password for $username."
 		echo "$username:$userpass" | arch-chroot /mnt chpasswd
 	fi
+
+	# Pacman eye-candy features.
+	info_print "Enabling colors, multilib, animations, and parallel downloads for pacman."
+	sed -Ei 's/^#(VerbosePkgLists)$/\1/;s/^#(Color)$/\1\nILoveCandy/;s/^#(ParallelDownloads).*/\1 = 10/' /mnt/etc/pacman.conf
+	sed -i "/\[multilib\]/,/Include/"'s/^#//' /mnt/etc/pacman.conf
+	arch-chroot /mnt /bin/bash -e <<-EOF
+		pacman -Sy &>/dev/null
+	EOF
+
+	# Disabling debug packages for yay
+	info_print "Disabling makepkg debug packages and activating parallel compilation"
+	# shellcheck disable=SC2016
+	sed -Ei 's/ (debug lto)/ !\1/;s/^#(MAKEFLAGS=).*/\1\"--jobs=\$(nproc)\"/' /mnt/etc/makepkg.conf # ignore
+
+	# Better history
+	info_print "Enabling better history search"
+	cat >/mnt/etc/profile.d/bash_history.sh <<-EOF
+		# Save 10,000 lines of history in memory
+		export HISTSIZE=10000
+		# Save 200,000 lines of history to disk (will have to grep ~/.bash_history for full listing)
+		export HISTFILESIZE=200000
+		# Append to history instead of overwrite
+		shopt -s histappend
+		# Ignore redundant or space commands
+		export HISTCONTROL=ignoreboth
+		# Ignore more
+		export HISTIGNORE='ls:ll:la:pwd:clear:history'
+		# Set time format
+		export HISTTIMEFORMAT='%F %T '
+		# Multiple commands on one line show up as a single line
+		shopt -s cmdhist
+		# Append new history lines, clear the history list, re-read the history list, print prompt.
+		export PROMPT_COMMAND="history -a; history -c; history -r; \$PROMPT_COMMAND"
+	EOF
 
 	info_print "Enabling Reflector"
 	systemctl enable "reflector.timer" --root=/mnt
