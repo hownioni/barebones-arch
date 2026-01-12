@@ -27,6 +27,8 @@ print_recs() {
 	txt1 "On the sudoers file add the following lines:"
 	txt2 'Defaults passwd_timeout=0'
 	txt2 'Defaults pwfeedback'
+	txt1 "Generate fstab"
+	txt1 "Set up the bootloader"
 }
 
 doinstall() {
