@@ -133,12 +133,6 @@ print_recs() {
 
 	txt1 "Do install to /mnt first!"
 	txt1 "Recommended swap size: $sswap ($hswap if hibernating)"
-	txt1 "Don't forget to add your user to the wheel group on the sudoers file"
-	txt1 "On the sudoers file add the following lines:"
-	txt2 'Defaults passwd_timeout=0'
-	txt2 'Defaults pwfeedback'
-	txt1 "Generate fstab"
-	txt1 "Set up the bootloader"
 }
 
 doinstall() {
