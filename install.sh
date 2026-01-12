@@ -75,6 +75,9 @@ doconf() {
 		# Append new history lines, clear the history list, re-read the history list, print prompt.
 		export PROMPT_COMMAND="history -a; history -c; history -r; \$PROMPT_COMMAND"
 	EOF
+
+	echo "Enabling NetworkManager"
+	systemctl enable NetworkManager --root=/mnt
 }
 
 printf "%s\n" "Welcome!"
