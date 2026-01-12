@@ -19,7 +19,7 @@ yes_or_no() {
 print_recs() {
 	txt1 "Don't forget to install an AUR client"
 	txt1 "Configure ly on /etc/ly/config.ini (clock format: %F %a - %r)"
-	txt1 "Don't forget to enable reflector.timer, ly, cups, avahi-daemon and bluetooth!"
+	txt1 "Don't forget to enable reflector.timer, ly, cups, avahi-daemon, bluetooth and obex (user)!"
 	txt2 "Edit the 'hosts:' line on /etc/nsswitch.conf to this:"
 	txt3 "hosts: mymachines mdns_minimal [NOTFOUND=return] resolve [!UNAVAIL=return] files myhostname dns"
 	txt1 "Create ssh keys and add them to your github account (don't forget to activate ssh-agent and config ~/.ssh)"
@@ -70,7 +70,8 @@ dogui() {
 				break
 				;;
 			"Wayland")
-				if yes_or_no "Do you want to use DankMaterialShell? If not, a minimal niri install will be done"; then
+				if yes_or_no "Do you want to use DankMaterialShell? If not, a minimal niri install with noctalia will be done"; then
+					sudo pacman -S --noconfirm --asdeps go
 					curl -fsSL https://install.danklinux.com | sh
 				else
 					mapfile -t -O "${#pkgs[@]}" pkgs <"$gui_pkgs_dir"/20-wayland
