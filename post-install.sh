@@ -65,26 +65,28 @@ dogui() {
 		return
 	fi
 
-	select opt in "${menu_opts[@]}"; do
-		case $opt in
-			"X11")
-				mapfile -t -O "${#pkgs[@]}" pkgs <"$gui_pkgs_dir"/10-x11
-				break
-				;;
-			"Wayland")
-				if yes_or_no "Do you want to use DankMaterialShell? If not, a minimal niri install with noctalia will be done"; then
-					sudo pacman -S --noconfirm --asdeps go
-					curl -fsSL https://install.danklinux.com | sh
-				else
-					mapfile -t -O "${#pkgs[@]}" pkgs <"$gui_pkgs_dir"/20-wayland
-				fi
-				break
-				;;
-			*)
-				echo "Invalid option"
-				;;
-		esac
-	done
+	if ! pacman -Qs qtile >/dev/null && ! pacman -Qs dms-shell >/dev/null && ! pacman -Qs noctalia-shell; then
+		select opt in "${menu_opts[@]}"; do
+			case $opt in
+				"X11")
+					mapfile -t -O "${#pkgs[@]}" pkgs <"$gui_pkgs_dir"/10-x11
+					break
+					;;
+				"Wayland")
+					if yes_or_no "Do you want to use DankMaterialShell? If not, a minimal niri install with noctalia will be done"; then
+						sudo pacman -S --noconfirm --asdeps go
+						curl -fsSL https://install.danklinux.com | sh
+					else
+						mapfile -t -O "${#pkgs[@]}" pkgs <"$gui_pkgs_dir"/20-wayland
+					fi
+					break
+					;;
+				*)
+					echo "Invalid option"
+					;;
+			esac
+		done
+	fi
 
 	if yes_or_no "Do you want productivity apps?"; then
 		mapfile -t -O "${#pkgs[@]}" pkgs <"$gui_pkgs_dir"/80-productivity
@@ -94,8 +96,8 @@ dogui() {
 		mapfile -t -O "${#pkgs[@]}" pkgs <"$gui_pkgs_dir"/90-games
 	fi
 
-	paru -S --sudoloop --noconfirm --noconfirm "${deps[@]}"
-	paru -S --sudoloop --noconfirm "${pkgs[@]}"
+	paru -S --sudoloop --needed --noconfirm --noconfirm "${deps[@]}"
+	paru -S --sudoloop --needed --noconfirm "${pkgs[@]}"
 
 	if yes_or_no "Do you want flatpak apps?"; then
 		while read -r inst ref; do
