@@ -61,6 +61,7 @@ pipewire-alsa
 pipewire-audio
 pipewire-pulse
 playerctl
+playerctl-systemd-unit
 posterazor
 python-dbus-fast
 python-pyxdg

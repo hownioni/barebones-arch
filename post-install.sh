@@ -132,7 +132,7 @@ doconf() {
 	fi
 
 	services=(cups.service avahi-daemon.service bluetooth.service)
-	user_services=(obex.service ssh-agent.service)
+	user_services=(obex.service ssh-agent.service playerctld.service)
 	for service in "${services[@]}"; do
 		sudo systemctl enable "$service"
 	done
