@@ -29,7 +29,6 @@ print_recs() {
 	# shellcheck disable=SC2016
 	txt2 'alias dotfiles='\''/usr/bin/git --git-dir="$HOME/.dotfiles/" --work-tree="$HOME"'\'''
 	txt2 'dotfiles checkout -f'
-	txt1 "Run 'tldr --update'"
 	# TODO: Add which extensions I use"
 	txt1 "Configure firefox"
 }
@@ -130,6 +129,8 @@ doconf() {
 	if [[ -f /etc/nsswitch.conf ]]; then
 		sudo sed -Ei 's/^(hosts: mymachines).*(resolve.*)/\1 mdns_minimal [NOTFOUND = return] \2/' /etc/nsswitch.conf
 	fi
+
+	tldr --update
 
 	services=(cups.service avahi-daemon.service bluetooth.service)
 	user_services=(obex.service ssh-agent.service playerctld.service)
