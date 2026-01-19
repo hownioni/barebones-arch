@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016
 
 source ./format.sh
 
@@ -16,20 +17,21 @@ yes_or_no() {
 	done
 }
 
+dotfiles() {
+	/usr/bin/git --git-dir="$HOME/.dotfiles/" --work-tree="$HOME" "$@"
+}
+
 print_recs() {
 	txt1 "Don't forget to install an AUR client"
 	txt2 'git clone https://aur.archlinux.org/paru.git'
 	txt1 "Finish CLI and GUI install"
 	txt1 "Configure ly on /etc/ly/config.ini (clock format: %F %a - %r) and don't forget to enable it."
-	txt1 "Create ssh keys and add them to your github account (don't forget to activate ssh-agent and config ~/.ssh)"
+	txt1 "Create ssh keys and add them to your github account (don't forget to activate ssh-agent and config ~/.ssh)."
 	txt2 'ssh-keygen'
-	txt1 "Clone your dotfiles with this command (And make the alias): "
-	# shellcheck disable=SC2016
-	txt2 'git clone --bare "$dotfiles_repo" "$HOME"/.dotfiles &>/dev/null'
-	# shellcheck disable=SC2016
-	txt2 'alias dotfiles='\''/usr/bin/git --git-dir="$HOME/.dotfiles/" --work-tree="$HOME"'\'''
-	txt2 'dotfiles checkout -f'
-	txt2 'dotfiles config --local status.showUntrackedFiles no'
+	txt2 "With ssh-agent active:"
+	txt2 'ssh-add .ssh/$ssh_key_file'
+	txt1 "Afterwards change the repos to use ssh."
+	txt2 'git remote set-url origin git@github.com:$USER/$REPO'
 	txt1 "Configure firefox"
 }
 
@@ -125,6 +127,16 @@ doconf() {
 	tldr --update
 
 	sudo usermod -aG gamemode "$USER"
+
+	dotfiles_repo="https://github.com/hownioni/dotfiles.git"
+	wallpaper_repo="https://github.com/hownioni/Walls.git"
+
+	git clone --bare "$dotfiles_repo" "$HOME/.dotfiles/" &>/dev/null
+	dotfiles checkout -f
+	dotfiles config --local status.showUntrackedFiles no
+
+	[[ ! -d "$HOME/Pictures/" ]] && mkdir "$HOME/Pictures/"
+	git clone "$wallpaper_repo" "$HOME/Pictures/Wallpapers/" &>/dev/null
 
 	services=(cups.service avahi-daemon.service bluetooth.service)
 	user_services=(obex.service ssh-agent.service playerctld.service)
