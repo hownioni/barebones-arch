@@ -29,7 +29,7 @@ print_recs() {
 	# shellcheck disable=SC2016
 	txt2 'alias dotfiles='\''/usr/bin/git --git-dir="$HOME/.dotfiles/" --work-tree="$HOME"'\'''
 	txt2 'dotfiles checkout -f'
-	# TODO: Add which extensions I use"
+	txt2 'dotfiles config --local status.showUntrackedFiles no'
 	txt1 "Configure firefox"
 }
 
@@ -44,7 +44,7 @@ docli() {
 		mapfile -t -O "${#pkgs[@]}" pkgs <"$cli_pkgs_dir"/10-laptop
 	fi
 
-	paru -S --needed --noconfirm "${pkgs[@]}"
+	paru -S --sudoloop --needed --noconfirm "${pkgs[@]}"
 }
 
 dogui() {
@@ -56,16 +56,9 @@ dogui() {
 	menu_opts=("X11" "Wayland")
 
 	mapfile -t pkgs <"$gui_pkgs_dir"/00-gui
-	mapfile -t deps <"$gui_pkgs_dir"/02-depends
+	mapfile -t -O "${#pkgs[@]}" pkgs <"$gui_pkgs_dir"/01-aur
 
-	if yes_or_no "Do you want to use the AUR?"; then
-		mapfile -t -O "${#pkgs[@]}" pkgs <"$gui_pkgs_dir"/01-aur
-	else
-		sudo pacman -S --noconfirm --needed "${pkgs[@]}"
-		return
-	fi
-
-	if ! pacman -Qs qtile >/dev/null && ! pacman -Qs dms-shell >/dev/null && ! pacman -Qs noctalia-shell; then
+	if ! pacman -Qs qtile >/dev/null && ! pacman -Qs dms-shell >/dev/null; then
 		select opt in "${menu_opts[@]}"; do
 			case $opt in
 				"X11")
@@ -73,16 +66,13 @@ dogui() {
 					break
 					;;
 				"Wayland")
-					if yes_or_no "Do you want to use DankMaterialShell? If not, a minimal niri install with noctalia will be done"; then
-						sudo pacman -S --noconfirm --asdeps go
-						curl -fsSL https://install.danklinux.com | sh
-					else
-						mapfile -t -O "${#pkgs[@]}" pkgs <"$gui_pkgs_dir"/20-wayland
-					fi
+					paru -S --sudoloop --needed --noconfirm --asdeps - <"$gui_pkgs_dir"/20-dms-deps
+					curl -fsSL https://install.danklinux.com | sh
 					break
 					;;
 				*)
 					echo "Invalid option"
+					return 1
 					;;
 			esac
 		done
@@ -96,7 +86,7 @@ dogui() {
 		mapfile -t -O "${#pkgs[@]}" pkgs <"$gui_pkgs_dir"/90-games
 	fi
 
-	paru -S --sudoloop --needed --noconfirm --noconfirm "${deps[@]}"
+	paru -S --sudoloop --needed --noconfirm --asdeps - <"$gui_pkgs_dir"/02-depends
 	paru -S --sudoloop --needed --noconfirm "${pkgs[@]}"
 
 	if yes_or_no "Do you want flatpak apps?"; then
@@ -133,6 +123,8 @@ doconf() {
 	fi
 
 	tldr --update
+
+	sudo usermod -aG gamemode "$USER"
 
 	services=(cups.service avahi-daemon.service bluetooth.service)
 	user_services=(obex.service ssh-agent.service playerctld.service)

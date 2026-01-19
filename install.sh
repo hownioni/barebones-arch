@@ -185,7 +185,7 @@ doconf() {
 	if [[ -n "$username" ]]; then
 		echo "%wheel ALL=(ALL:ALL) ALL" >/mnt/etc/sudoers.d/wheel
 		info_print "Adding the user $username to the system with root privilege."
-		arch-chroot /mnt useradd -m -G wheel,games -s /bin/bash "$username"
+		arch-chroot /mnt useradd -m -G wheel,games,input -s /bin/bash "$username"
 		info_print "Setting user password for $username."
 		echo "$username:$userpass" | arch-chroot /mnt chpasswd
 	fi
