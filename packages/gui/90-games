@@ -14,7 +14,7 @@ lib32-gst-plugins-base
 lib32-gst-plugins-good
 lib32-mangohud
 lib32-mesa
-lutris
+lutris-git
 mangohud
 prismlauncher
 proton-ge-custom-bin
