@@ -140,6 +140,11 @@ doconf() {
 
 	services=(cups.service avahi-daemon.service bluetooth.service)
 	user_services=(obex.service ssh-agent.service playerctld.service)
+	dev_type=$(hostnamectl chassis)
+	if [[ "$dev_type" == "laptop" ]]; then
+		sudo systemctl unmask power-profiles-daemon.service
+		services+=(power-profiles-daemon.service)
+	fi
 	for service in "${services[@]}"; do
 		sudo systemctl enable "$service"
 	done
