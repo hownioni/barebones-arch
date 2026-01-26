@@ -68,7 +68,7 @@ dogui() {
 					break
 					;;
 				"Wayland")
-					paru -S --sudoloop --needed --noconfirm --asdeps - <"$gui_pkgs_dir"/20-dms-deps
+					paru -S --sudoloop --needed --asdeps - <"$gui_pkgs_dir"/20-dms-deps
 					curl -fsSL https://install.danklinux.com | sh
 					break
 					;;
@@ -88,7 +88,7 @@ dogui() {
 		mapfile -t -O "${#pkgs[@]}" pkgs <"$gui_pkgs_dir"/90-games
 	fi
 
-	paru -S --sudoloop --needed --noconfirm --asdeps - <"$gui_pkgs_dir"/02-depends
+	paru -S --sudoloop --needed --asdeps - <"$gui_pkgs_dir"/02-depends
 	paru -S --sudoloop --needed --noconfirm "${pkgs[@]}"
 
 	if yes_or_no "Do you want flatpak apps?"; then
